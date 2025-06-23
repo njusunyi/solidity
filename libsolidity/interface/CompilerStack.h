@@ -631,6 +631,7 @@ private:
 	State m_stackState = Empty;
 	CompilationSourceType m_compilationSourceType = CompilationSourceType::Solidity;
 	MetadataFormat m_metadataFormat = defaultMetadataFormat();
+	std::optional<std::string> m_predefinedStorageLayout;
 };
 
 }

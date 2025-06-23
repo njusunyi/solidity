@@ -941,6 +941,11 @@ void CommandLineInterface::compile()
 		m_compiler->setRevertStringBehaviour(m_options.output.revertStrings);
 		if (m_options.output.debugInfoSelection.has_value())
 			m_compiler->selectDebugInfo(m_options.output.debugInfoSelection.value());
+		if (m_options.output.predefinedStorageLayout.has_value())
+		{
+			std::string layoutContent = readFileAsString(m_options.output.predefinedStorageLayout.value());
+			m_compiler->setPredefinedStorageLayout(layoutContent);
+		}
 
 		CompilerStack::PipelineConfig pipelineConfig;
 		pipelineConfig.irOptimization =

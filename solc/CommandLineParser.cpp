@@ -91,6 +91,7 @@ static std::string const g_strOutputDir = "output-dir";
 static std::string const g_strOverwrite = "overwrite";
 static std::string const g_strRevertStrings = "revert-strings";
 static std::string const g_strStopAfter = "stop-after";
+static std::string const g_strPredefinedStorageLayout = "predefined-storage-layout";
 
 /// Possible arguments to for --revert-strings
 static std::set<std::string> const g_revertStringsArgs
