@@ -1122,12 +1122,7 @@ Json const& CompilerStack::storageLayout(Contract const& _contract) const
 	solAssert(_contract.contract);
 	solUnimplementedAssert(!isExperimentalSolidity());
 
-	return _contract.storageLayout.init([&]{ 
-		if (m_predefinedStorageLayout.has_value())
-			return *m_predefinedStorageLayout;
-		else
-			return StorageLayout().generate(*_contract.contract, DataLocation::Storage);
-	});
+	return _contract.storageLayout.init([&]{ return StorageLayout().generate(*_contract.contract, DataLocation::Storage);});
 }
 
 Json const& CompilerStack::transientStorageLayout(std::string const& _contractName) const
