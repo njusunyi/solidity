@@ -944,7 +944,12 @@ void CommandLineInterface::compile()
 		if (m_options.output.predefinedStorageLayout.has_value())
 		{
 			std::string layoutContent = readFileAsString(m_options.output.predefinedStorageLayout.value());
-			m_compiler->setPredefinedStorageLayout(layoutContent);
+			Json layoutJson;
+			std::string errors;
+			if (!util::jsonParseStrict(layoutContent, layoutJson, &errors))
+				solThrow(util::Exception, "Invalid JSON in predefined storage layout: " + errors);
+			sout() << "Predefined storage layout JSON: " << util::jsonCompactPrint(layoutJson) << std::endl;
+			m_compiler->setPredefinedStorageLayout(layoutJson);
 		}
 
 		CompilerStack::PipelineConfig pipelineConfig;

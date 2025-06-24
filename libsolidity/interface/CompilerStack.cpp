@@ -251,6 +251,12 @@ void CompilerStack::setModelCheckerSettings(ModelCheckerSettings _settings)
 	m_modelCheckerSettings = _settings;
 }
 
+void CompilerStack::setPredefinedStorageLayout(Json const& _layoutJson)
+{
+	solAssert(m_stackState < ParsedAndImported, "Must set predefined storage layout before parsing.");
+	m_predefinedStorageLayout = _layoutJson;
+}
+
 void CompilerStack::selectContracts(ContractSelection const& _selectedContracts)
 {
 	solAssert(m_stackState < ParsedAndImported, "Must request outputs before parsing.");
@@ -1116,7 +1122,12 @@ Json const& CompilerStack::storageLayout(Contract const& _contract) const
 	solAssert(_contract.contract);
 	solUnimplementedAssert(!isExperimentalSolidity());
 
-	return _contract.storageLayout.init([&]{ return StorageLayout().generate(*_contract.contract, DataLocation::Storage); });
+	return _contract.storageLayout.init([&]{ 
+		if (m_predefinedStorageLayout.has_value())
+			return *m_predefinedStorageLayout;
+		else
+			return StorageLayout().generate(*_contract.contract, DataLocation::Storage);
+	});
 }
 
 Json const& CompilerStack::transientStorageLayout(std::string const& _contractName) const

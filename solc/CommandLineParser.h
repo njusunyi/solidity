@@ -198,6 +198,7 @@ struct CommandLineOptions
 		std::optional<langutil::DebugInfoSelection> debugInfoSelection;
 		CompilerStack::State stopAfter = CompilerStack::State::CompilationSuccessful;
 		std::optional<uint8_t> eofVersion;
+		std::optional<boost::filesystem::path> predefinedStorageLayout;
 	} output;
 
 	struct

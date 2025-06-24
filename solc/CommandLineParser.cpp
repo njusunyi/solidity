@@ -660,6 +660,11 @@ General Information)").c_str(),
 			po::value<std::string>()->value_name("stage"),
 			"Stop execution after the given compiler stage. Valid options: \"parsing\"."
 		)
+		(
+			g_strPredefinedStorageLayout.c_str(),
+			po::value<std::string>()->value_name("file"),
+			"Use predefined storage layout from JSON file instead of generating it automatically."
+		)
 	;
 	desc.add(outputOptions);
 
@@ -1035,6 +1040,7 @@ void CommandLineParser::processArgs()
 		{g_strMetadataLiteral, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
 		{g_strNoCBORMetadata, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
 		{g_strMetadataHash, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
+		{g_strPredefinedStorageLayout, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
 		{g_strModelCheckerContracts, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
 		{g_strModelCheckerDivModNoSlacks, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
 		{g_strModelCheckerEngine, {InputMode::Compiler, InputMode::CompilerWithASTImport}},
@@ -1222,6 +1228,9 @@ void CommandLineParser::processArgs()
 		else
 			m_options.output.stopAfter = CompilerStack::State::Parsed;
 	}
+
+	if (m_args.count(g_strPredefinedStorageLayout))
+		m_options.output.predefinedStorageLayout = m_args[g_strPredefinedStorageLayout].as<std::string>();
 
 	parseInputPathsAndRemappings();
 

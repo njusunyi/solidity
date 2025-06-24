@@ -235,6 +235,10 @@ public:
 	/// Set model checker settings.
 	void setModelCheckerSettings(ModelCheckerSettings _settings);
 
+	/// Set predefined slot layout from JSON file.
+	/// Must be set before parsing.
+	void setPredefinedStorageLayout(Json const& _layoutJson);
+
 	/// Sets names of the contracts from each source that should be compiled.
 	/// If empty, no filtering is performed and every contract found in the supplied sources goes
 	/// through the default pipeline stages (bytecode-only, no IR).
@@ -631,7 +635,7 @@ private:
 	State m_stackState = Empty;
 	CompilationSourceType m_compilationSourceType = CompilationSourceType::Solidity;
 	MetadataFormat m_metadataFormat = defaultMetadataFormat();
-	std::optional<std::string> m_predefinedStorageLayout;
+	std::optional<Json> m_predefinedStorageLayout;
 };
 
 }
