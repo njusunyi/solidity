@@ -2177,6 +2177,7 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 	StorageOffsets offsets;
 	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
 	// if predefined-storage-layout is enabled, use the layout from the json file
+	// TODO: Now assume only one contract in the file...
 	if (m_contract.annotation().predefinedStorageLayout.has_value())
 	{
 		Json const& layoutJson = m_contract.annotation().predefinedStorageLayout.value();
