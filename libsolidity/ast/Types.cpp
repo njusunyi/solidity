@@ -2175,13 +2175,30 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 	for (auto variable: variables)
 		types.push_back(variable->annotation().type);
 	StorageOffsets offsets;
+	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
+	// if predefined-storage-layout is enabled, use the layout from the json file
+	if (m_contract.annotation().predefinedStorageLayout.has_value())
+	{
+		Json const& layoutJson = m_contract.annotation().predefinedStorageLayout.value();
+		Json const& varsJson = layoutJson["vars"];
+		for (size_t index = 0; index < variables.size(); ++index)
+		{
+			std::string var_name = variables[index]->name();
+			// Convert JSON values to the correct types
+			u256 slot = u256(varsJson[var_name]["slot"].get<unsigned>());
+			unsigned offset = varsJson[var_name]["offset"].get<unsigned>();
+			variablesAndOffsets.emplace_back(variables[index], slot, offset);
+		}
+		return variablesAndOffsets;
+	} 
+	
 	offsets.computeOffsets(types, layoutBaseForInheritanceHierarchy(m_contract, _location));
 
-	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
 	for (size_t index = 0; index < variables.size(); ++index)
 		if (auto const* offset = offsets.offset(index))
 			variablesAndOffsets.emplace_back(variables[index], offset->first, offset->second);
 	return variablesAndOffsets;
+	
 }
 
 std::vector<VariableDeclaration const*> ContractType::immutableVariables() const

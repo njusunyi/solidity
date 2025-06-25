@@ -29,6 +29,7 @@
 
 #include <libsolutil/Numeric.h>
 #include <libsolutil/SetOnce.h>
+#include <libsolutil/JSON.h>
 
 #include <map>
 #include <memory>
@@ -172,6 +173,9 @@ struct ContractDefinitionAnnotation: TypeDeclarationAnnotation, StructurallyDocu
 
 	// Per-contract map from function AST IDs to internal dispatch function IDs.
 	std::map<FunctionDefinition const*, uint64_t> internalFunctionIDs;
+
+	/// Predefined storage layout JSON from command line argument
+	std::optional<Json> predefinedStorageLayout;
 };
 
 struct StorageLayoutSpecifierAnnotation: ASTAnnotation

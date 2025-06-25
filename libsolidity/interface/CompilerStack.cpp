@@ -1418,7 +1418,12 @@ void CompilerStack::storeContractDefinitions()
 				// thus contracts can only conflict if declared in the same source file. This
 				// should already cause a double-declaration error elsewhere.
 				if (!m_contracts.count(fullyQualifiedName))
+				{
 					m_contracts[fullyQualifiedName].contract = contract;
+					// Set predefined storage layout in contract annotation if available
+					if (m_predefinedStorageLayout.has_value())
+						contract->annotation().predefinedStorageLayout = m_predefinedStorageLayout;
+				}
 			}
 }
 
