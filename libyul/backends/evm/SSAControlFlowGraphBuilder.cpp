@@ -109,7 +109,7 @@ SSACFG::ValueId SSAControlFlowGraphBuilder::tryRemoveTrivialPhi(SSACFG::ValueId 
 
 	m_graph.block(phiInfo->block).phis.erase(_phi);
 
-	std::set<SSACFG::ValueId> phiUses;
+	std::vector<SSACFG::ValueId> phiUses;
 	for (size_t blockIdValue = 0; blockIdValue < m_graph.numBlocks(); ++blockIdValue)
 	{
 		auto& block = m_graph.block(SSACFG::BlockId{blockIdValue});
@@ -126,18 +126,13 @@ SSACFG::ValueId SSAControlFlowGraphBuilder::tryRemoveTrivialPhi(SSACFG::ValueId 
 					usedInPhi = true;
 				}
 			if (usedInPhi)
-				phiUses.emplace(blockPhi);
+				phiUses.push_back(blockPhi);
 		}
 		for (auto& op: block.operations)
-			std::replace(op.inputs.begin(), op.inputs.end(), _phi, same);
+			ranges::replace(op.inputs, _phi, same);
 		std::visit(util::GenericVisitor{
 			[_phi, same](SSACFG::BasicBlock::FunctionReturn& _functionReturn) {
-				std::replace(
-					_functionReturn.returnValues.begin(),
-					_functionReturn.returnValues.end(),
-					_phi,
-					same
-				);
+				ranges::replace(_functionReturn.returnValues,_phi, same);
 			},
 			[_phi, same](SSACFG::BasicBlock::ConditionalJump& _condJump) {
 				if (_condJump.condition == _phi)
@@ -188,22 +183,17 @@ void SSAControlFlowGraphBuilder::cleanUnreachable()
 	{
 		auto& block = m_graph.block(blockId);
 
-		std::set<SSACFG::ValueId> maybeTrivialPhi;
-		for (auto it = block.entries.begin(); it != block.entries.end();)
-			if (reachabilityCheck.visited.count(*it))
-				it++;
-			else
-				it = block.entries.erase(it);
+		std::vector<SSACFG::ValueId> maybeTrivialPhi;
+		std::erase_if(block.entries, [&](auto const& entry) { return !reachabilityCheck.visited.contains(entry); });
 		for (auto phi: block.phis)
 			if (auto* phiInfo = std::get_if<SSACFG::PhiValue>(&m_graph.valueInfo(phi)))
-				std::erase_if(phiInfo->arguments, [&](SSACFG::ValueId _arg) {
-					if (std::holds_alternative<SSACFG::UnreachableValue>(m_graph.valueInfo(_arg)))
-					{
-						maybeTrivialPhi.insert(phi);
-						return true;
-					}
-					return false;
+			{
+				auto erasedCount = std::erase_if(phiInfo->arguments, [&](SSACFG::ValueId _arg) {
+					return std::holds_alternative<SSACFG::UnreachableValue>(m_graph.valueInfo(_arg));
 				});
+				if (erasedCount > 0)
+					maybeTrivialPhi.push_back(phi);
+			}
 
 		// After removing a phi argument, we might end up with a trivial phi that can be removed.
 		for (auto phi: maybeTrivialPhi)
@@ -287,20 +277,33 @@ void SSAControlFlowGraphBuilder::operator()(FunctionDefinition const& _functionD
 
 void SSAControlFlowGraphBuilder::operator()(If const& _if)
 {
-	auto condition = std::visit(*this, *_if.condition);
-	auto ifBranch = m_graph.makeBlock(debugDataOf(_if.body));
-	auto afterIf = m_graph.makeBlock(debugDataOf(currentBlock()));
-	conditionalJump(
-		debugDataOf(_if),
-		condition,
-		ifBranch,
-		afterIf
-	);
-	sealBlock(ifBranch);
-	m_currentBlock = ifBranch;
-	(*this)(_if.body);
-	jump(debugDataOf(_if.body), afterIf);
-	sealBlock(afterIf);
+	std::optional<bool> constantCondition;
+	if (auto const* literalCondition = std::get_if<Literal>(_if.condition.get()))
+		constantCondition = literalCondition->value.value() != 0;
+	// deal with literal (constant) conditions explicitly
+	if (constantCondition)
+	{
+		if (*constantCondition)
+			// Always true - skip conditional, just execute if branch
+			(*this)(_if.body);
+	}
+	else
+	{
+		auto condition = std::visit(*this, *_if.condition);
+		auto ifBranch = m_graph.makeBlock(debugDataOf(_if.body));
+		auto afterIf = m_graph.makeBlock(debugDataOf(currentBlock()));
+		conditionalJump(
+			debugDataOf(_if),
+			condition,
+			ifBranch,
+			afterIf
+		);
+		sealBlock(ifBranch);
+		m_currentBlock = ifBranch;
+		(*this)(_if.body);
+		jump(debugDataOf(_if.body), afterIf);
+		sealBlock(afterIf);
+	}
 }
 
 void SSAControlFlowGraphBuilder::operator()(Switch const& _switch)
@@ -342,6 +345,28 @@ void SSAControlFlowGraphBuilder::operator()(Switch const& _switch)
 	}
 	else
 	{
+		if (auto const* constantExpression = std::get_if<Literal>(_switch.expression.get()))
+		{
+			Case const* matchedCase = nullptr;
+			// select case that matches (or default if available)
+			for (auto const& switchCase: _switch.cases)
+			{
+				if (!switchCase.value)
+					matchedCase = &switchCase;
+				if (switchCase.value && switchCase.value->value.value() == constantExpression->value.value())
+				{
+					matchedCase = &switchCase;
+					break;
+				}
+			}
+			if (matchedCase)
+			{
+				// inject directly into the current block
+				(*this)(matchedCase->body);
+			}
+			return;
+		}
+
 		std::optional<BuiltinHandle> equalityBuiltinHandle = m_dialect.equalityFunctionHandle();
 		yulAssert(equalityBuiltinHandle);
 
