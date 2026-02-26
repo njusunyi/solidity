@@ -8,8 +8,8 @@ General Resources
 * `Ethereum.org Developers page <https://ethereum.org/en/developers/>`_
 * `Ethereum StackExchange <https://ethereum.stackexchange.com/>`_
 * `Solidity website <https://soliditylang.org/>`_
-* `Solidity changelog <https://github.com/ethereum/solidity/blob/develop/Changelog.md>`_
-* `Solidity codebase on GitHub <https://github.com/ethereum/solidity/>`_
+* `Solidity changelog <https://github.com/argotorg/solidity/blob/develop/Changelog.md>`_
+* `Solidity codebase on GitHub <https://github.com/argotorg/solidity/>`_
 * `Solidity language users chat <https://matrix.to/#/#ethereum_solidity:gitter.im>`_
 * `Solidity compiler developers chat <https://matrix.to/#/#ethereum_solidity-dev:gitter.im>`_
 * `awesome-solidity <https://github.com/bkrem/awesome-solidity>`_
@@ -78,6 +78,9 @@ Editor Integrations
 
 * Visual Studio Code (VS Code)
 
+    * `Aderyn Visual Studio Code extension <https://marketplace.visualstudio.com/items?itemName=Cyfrin.aderyn>`_
+        Solidity Smart contract analyzer designed to help find vulnerabilities. It supports projects built with Hardhat, Foundry, or any custom framework.
+
     * `Ethereum Remix Visual Studio Code extension <https://github.com/ethereum/remix-vscode>`_
         Ethereum Remix extension pack for VS Code
         💡 Note: As per the official repository, this extension has been removed from the VSCODE marketplace and will be replaced by a dedicated stand-alone desktop application.
@@ -107,7 +110,7 @@ Solidity Tools
     Tool to generate Solidity interface source from a given ABI JSON.
 
 * `Aderyn <https://github.com/Cyfrin/aderyn>`_
-    Rust-based solidity smart contract static analyzer designed to help find vulnerabilities in Solidity code bases.
+    Command Line Tool that helps find vulnerabilities in Solidity smart contracts. It supports projects built with Hardhat, Foundry, or any custom framework.
 
 * `Doxity <https://github.com/DigixGlobal/doxity>`_
     Documentation Generator for Solidity.
@@ -132,6 +135,9 @@ Solidity Tools
 
 * `Scaffold-ETH 2 <https://github.com/scaffold-eth/scaffold-eth-2>`_
     Forkable Ethereum development stack focused on fast product iterations.
+
+* `Slippy <https://github.com/fvictorio/slippy>`_
+    A simple and powerful linter for Solidity.
 
 * `sol2uml <https://www.npmjs.com/package/sol2uml>`_
     Unified Modeling Language (UML) class diagram generator for Solidity contracts.

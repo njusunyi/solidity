@@ -3,6 +3,7 @@ Counterexample:
 arr = []
 a = 0x0
 x = 0
+success = false
 
 Transaction trace:
 test.constructor()
@@ -18,6 +19,7 @@ Counterexample:
 arr = []
 a = 0x0
 x = 1
+success = false
 
 Transaction trace:
 test.constructor()

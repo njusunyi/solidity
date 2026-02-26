@@ -181,6 +181,8 @@ u256 EVMInstructionInterpreter::eval(
 			return v;
 		}
 	}
+	case Instruction::CLZ:
+		return arg[0] == 0 ? 256 : 255 - msb(arg[0]);
 	case Instruction::ADDMOD:
 		return arg[2] == 0 ? 0 : u256((u512(arg[0]) + u512(arg[1])) % arg[2]);
 	case Instruction::MULMOD:
@@ -532,7 +534,8 @@ u256 EVMInstructionInterpreter::evalBuiltin(
 			return u256(keccak256(arg)) & 0xfff;
 		}
 	}
-	else if (fun == "datacopy")
+
+	if (fun == "datacopy")
 	{
 		// This is identical to codecopy.
 		if (
@@ -548,11 +551,41 @@ u256 EVMInstructionInterpreter::evalBuiltin(
 			);
 		return 0;
 	}
-	else if (fun == "memoryguard")
+
+	if (fun == "memoryguard")
 		return _evaluatedArguments.at(0);
-	else
-		yulAssert(false, "Unknown builtin: " + fun);
-	return 0;
+
+	if (fun == "linkersymbol")
+	{
+		yulAssert(_arguments.size() == 1);
+		yulAssert(std::holds_alternative<Literal>(_arguments[0]));
+		std::string const placeholder = formatLiteral(std::get<Literal>(_arguments[0]));
+		h256 const identifier(keccak256(placeholder));
+		m_linkerSymbols.emplace(identifier, placeholder);
+		return u256(identifier);
+	}
+
+	if (fun == "loadimmutable")
+	{
+		yulAssert(_arguments.size() == 1);
+		yulAssert(std::holds_alternative<Literal>(_arguments[0]));
+		std::string const identifier = formatLiteral(std::get<Literal>(_arguments[0]));
+		// Return a deterministic value based on the identifier.
+		// This is sufficient for differential fuzzing since the same identifier
+		// will always return the same value, maintaining trace equivalence.
+		return u256(h256(keccak256(identifier)));
+	}
+
+	if (fun == "setimmutable")
+	{
+		yulAssert(_arguments.size() == 3);
+		// No-op: The real implementation patches placeholder bytes in memory-loaded runtime code.
+		// For differential fuzzing, this ensures correct code never fails (no false positives), though some
+		// bugs in setimmutable handling may not be detected (potential false negatives).
+		return 0;
+	}
+
+	yulAssert(false, "Unknown builtin: " + fun);
 }
 
 

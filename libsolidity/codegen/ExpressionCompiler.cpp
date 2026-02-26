@@ -2133,6 +2133,7 @@ bool ExpressionCompiler::visit(MemberAccess const& _memberAccess)
 			dynamic_cast<VariableDeclaration const*>(_memberAccess.annotation().referencedDeclaration) ||
 			dynamic_cast<FunctionDefinition const*>(_memberAccess.annotation().referencedDeclaration) ||
 			dynamic_cast<ErrorDefinition const*>(_memberAccess.annotation().referencedDeclaration) ||
+			dynamic_cast<EventDefinition const*>(_memberAccess.annotation().referencedDeclaration) ||
 			category == Type::Category::TypeType ||
 			category == Type::Category::Module,
 			""
@@ -2297,7 +2298,7 @@ bool ExpressionCompiler::visit(IndexRangeAccess const& _indexAccess)
 
 	Type const& baseType = *_indexAccess.baseExpression().annotation().type;
 
-	ArrayType const *arrayType = dynamic_cast<ArrayType const*>(&baseType);
+	ArrayType const* arrayType = dynamic_cast<ArrayType const*>(&baseType);
 	if (!arrayType)
 		if (ArraySliceType const* sliceType = dynamic_cast<ArraySliceType const*>(&baseType))
 			arrayType = &sliceType->arrayType();

@@ -17,14 +17,14 @@
 // graph[fontname="DejaVu Sans"]
 // node[shape=box,fontname="DejaVu Sans"];
 //
-// Entry0 [label="Entry"];
-// Entry0 -> Block0_0;
-// Block0_0 [label="\
+// Entry [label="Entry"];
+// Entry -> Block0_0;
+// Block0_0 [fillcolor="#FF746C", style=filled, label="\
 // Block 0; (0, max 0)\nLiveIn: \l\
-// LiveOut: \l\nv1 := calldataload(3)\l\
-// v3 := calldataload(42)\l\
-// v4 := calldataload(v3)\l\
-// sstore(0, v4)\l\
+// LiveOut: \l\nUsed: \l\nv0 := calldataload(0x03)\l\
+// v1 := calldataload(0x2a)\l\
+// v2 := calldataload(v1)\l\
+// sstore(0x00, v2)\l\
 // "];
 // Block0_0Exit [label="MainExit"];
 // Block0_0 -> Block0_0Exit;

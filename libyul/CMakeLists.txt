@@ -42,8 +42,6 @@ add_library(yul
 	ScopeFiller.h
 	Utilities.cpp
 	Utilities.h
-	YulControlFlowGraphExporter.h
-	YulControlFlowGraphExporter.cpp
 	YulName.h
 	YulString.h
 	backends/evm/AbstractAssembly.h
@@ -51,8 +49,6 @@ add_library(yul
 	backends/evm/AsmCodeGen.h
 	backends/evm/ConstantOptimiser.cpp
 	backends/evm/ConstantOptimiser.h
-	backends/evm/ControlFlow.cpp
-	backends/evm/ControlFlow.h
 	backends/evm/ControlFlowGraph.h
 	backends/evm/ControlFlowGraphBuilder.cpp
 	backends/evm/ControlFlowGraphBuilder.h
@@ -72,21 +68,41 @@ add_library(yul
 	backends/evm/NoOutputAssembly.cpp
 	backends/evm/OptimizedEVMCodeTransform.cpp
 	backends/evm/OptimizedEVMCodeTransform.h
-	backends/evm/SSACFGLiveness.cpp
-	backends/evm/SSACFGLiveness.h
-	backends/evm/SSACFGLoopNestingForest.cpp
-	backends/evm/SSACFGLoopNestingForest.h
-	backends/evm/SSACFGTopologicalSort.cpp
-	backends/evm/SSACFGTopologicalSort.h
-	backends/evm/SSAControlFlowGraph.cpp
-	backends/evm/SSAControlFlowGraph.h
-	backends/evm/SSAControlFlowGraphBuilder.cpp
-	backends/evm/SSAControlFlowGraphBuilder.h
 	backends/evm/StackHelpers.h
 	backends/evm/StackLayoutGenerator.cpp
 	backends/evm/StackLayoutGenerator.h
 	backends/evm/VariableReferenceCounter.h
 	backends/evm/VariableReferenceCounter.cpp
+	backends/evm/ssa/BridgeFinder.h
+	backends/evm/ssa/ControlFlow.cpp
+	backends/evm/ssa/ControlFlow.h
+	backends/evm/ssa/JunkAdmittingBlocksFinder.cpp
+	backends/evm/ssa/JunkAdmittingBlocksFinder.h
+	backends/evm/ssa/LivenessAnalysis.cpp
+	backends/evm/ssa/LivenessAnalysis.h
+	backends/evm/ssa/PhiInverse.cpp
+	backends/evm/ssa/PhiInverse.h
+	backends/evm/ssa/SSACFGLoopNestingForest.cpp
+	backends/evm/ssa/SSACFGLoopNestingForest.h
+	backends/evm/ssa/SSACFG.cpp
+	backends/evm/ssa/SSACFG.h
+	backends/evm/ssa/SSACFGBuilder.cpp
+	backends/evm/ssa/SSACFGBuilder.h
+	backends/evm/ssa/Stack.cpp
+	backends/evm/ssa/Stack.h
+	backends/evm/ssa/StackLayout.h
+	backends/evm/ssa/StackLayoutGenerator.cpp
+	backends/evm/ssa/StackLayoutGenerator.h
+	backends/evm/ssa/StackShuffler.cpp
+	backends/evm/ssa/StackShuffler.h
+	backends/evm/ssa/StackUtils.cpp
+	backends/evm/ssa/StackUtils.h
+	backends/evm/ssa/io/DotExporterBase.cpp
+	backends/evm/ssa/io/DotExporterBase.h
+	backends/evm/ssa/io/JSONExporter.cpp
+	backends/evm/ssa/io/JSONExporter.h
+	backends/evm/ssa/traversal/ForwardTopologicalSort.cpp
+	backends/evm/ssa/traversal/ForwardTopologicalSort.h
 	optimiser/ASTCopier.cpp
 	optimiser/ASTCopier.h
 	optimiser/ASTWalker.cpp

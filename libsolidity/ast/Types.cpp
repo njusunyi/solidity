@@ -3492,7 +3492,7 @@ MemberList::MemberMap FunctionType::nativeMembers(ASTNode const* _scope) const
 		if (auto const* functionDefinition = dynamic_cast<FunctionDefinition const*>(m_declaration))
 		{
 			solAssert(functionDefinition->visibility() > Visibility::Internal, "");
-			auto const *contract = dynamic_cast<ContractDefinition const*>(m_declaration->scope());
+			auto const* contract = dynamic_cast<ContractDefinition const*>(m_declaration->scope());
 			solAssert(contract, "");
 			solAssert(contract->isLibrary(), "");
 			return {{"selector", TypeProvider::fixedBytes(4)}};
@@ -3731,7 +3731,9 @@ bool FunctionType::isPure() const
 		m_kind == Kind::ABIDecode ||
 		m_kind == Kind::MetaType ||
 		m_kind == Kind::Wrap ||
-		m_kind == Kind::Unwrap;
+		m_kind == Kind::Unwrap ||
+		m_kind == Kind::BytesConcat ||
+		m_kind == Kind::StringConcat;
 }
 
 TypePointers FunctionType::parseElementaryTypeVector(strings const& _types)
