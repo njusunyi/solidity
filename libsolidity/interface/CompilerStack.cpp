@@ -1422,7 +1422,13 @@ void CompilerStack::storeContractDefinitions()
 					m_contracts[fullyQualifiedName].contract = contract;
 					// Set predefined storage layout in contract annotation if available
 					if (m_predefinedStorageLayout.has_value())
+					{
 						contract->annotation().predefinedStorageLayout = m_predefinedStorageLayout;
+						// Also propagate to contract-defined structs so the "structs"
+						// section can override their field layout (StructType reads it).
+						for (StructDefinition const* structDef: contract->definedStructs())
+							structDef->annotation().predefinedStorageLayout = m_predefinedStorageLayout;
+					}
 				}
 			}
 }

@@ -85,6 +85,9 @@ public:
 	/// Assumes that @a _types is small enough to fit in the area between @a _baseSlot and the end of storage
 	/// (the caller is responsible for validating that).
 	void computeOffsets(TypePointers const& _types, u256 _baseSlot = 0);
+	/// Installs explicit per-index (slot, byte-offset) positions and total size,
+	/// bypassing computeOffsets (used to apply a predefined struct field layout).
+	void setOffsets(std::map<size_t, std::pair<u256, unsigned>> _offsets, u256 _storageSize);
 	/// @returns the offset of the given member, might be null if the member is not part of storage.
 	std::pair<u256, unsigned> const* offset(size_t _index) const;
 	/// @returns the total number of slots occupied by all members.
@@ -153,11 +156,20 @@ public:
 	MemberMap::const_iterator begin() const { return m_memberTypes.begin(); }
 	MemberMap::const_iterator end() const { return m_memberTypes.end(); }
 
+	/// Pins each member to an explicit (relative slot, byte-offset) by name, so
+	/// storageOffsets() uses this layout instead of declaration-order packing.
+	/// Must cover every member; set by StructType from a predefined struct layout.
+	void setPredefinedStorageOffsets(std::map<std::string, std::pair<u256, unsigned>> _offsets)
+	{
+		m_predefinedFieldOffsets = std::move(_offsets);
+	}
+
 private:
 	StorageOffsets const& storageOffsets() const;
 
 	MemberMap m_memberTypes;
 	util::LazyInit<StorageOffsets> m_storageOffsets;
+	std::optional<std::map<std::string, std::pair<u256, unsigned>>> m_predefinedFieldOffsets;
 };
 
 static_assert(std::is_nothrow_move_constructible<MemberList>::value, "MemberList should be noexcept move constructible");
@@ -423,6 +435,9 @@ protected:
 	{
 		return MemberList::MemberMap();
 	}
+	/// Hook invoked by members() on the freshly built storage member list (scope == nullptr).
+	/// StructType overrides this to pin members to a predefined field layout when one applies.
+	virtual void applyPredefinedStorageLayout(MemberList& /*_members*/) const {}
 	/// Generates the stack items to be returned by ``stackItems()``. Defaults
 	/// to exactly one unnamed and untyped stack item referring to a single stack slot.
 	virtual std::vector<std::tuple<std::string, Type const*>> makeStackItems() const
@@ -1080,6 +1095,9 @@ public:
 protected:
 	std::vector<std::tuple<std::string, Type const*>> makeStackItems() const override;
 	std::vector<Type const*> decomposition() const override;
+	/// Applies struct_layout.json's "structs"[name] field positions to the storage
+	/// member list, when present and covering every field (else leaves it computed).
+	void applyPredefinedStorageLayout(MemberList& _members) const override;
 
 private:
 	StructDefinition const& m_struct;

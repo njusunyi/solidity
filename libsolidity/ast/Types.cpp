@@ -182,6 +182,12 @@ std::pair<u256, unsigned> const* StorageOffsets::offset(size_t _index) const
 		return nullptr;
 }
 
+void StorageOffsets::setOffsets(std::map<size_t, std::pair<u256, unsigned>> _offsets, u256 _storageSize)
+{
+	m_offsets = std::move(_offsets);
+	m_storageSize = _storageSize;
+}
+
 void MemberList::combine(MemberList const & _other)
 {
 	m_memberTypes += _other.m_memberTypes;
@@ -204,12 +210,31 @@ u256 const& MemberList::storageSize() const
 
 StorageOffsets const& MemberList::storageOffsets() const {
 	return m_storageOffsets.init([&]{
+		StorageOffsets storageOffsets;
+
+		// Predefined struct field layout (from struct_layout.json): pin each member
+		// to its given (relative slot, byte offset). Set only when it covers every
+		// member, so the lookup below always succeeds.
+		if (m_predefinedFieldOffsets)
+		{
+			std::map<size_t, std::pair<u256, unsigned>> byIndex;
+			u256 slots = 0;
+			for (auto&& [index, member]: m_memberTypes | ranges::views::enumerate)
+			{
+				auto it = m_predefinedFieldOffsets->find(member.name);
+				solAssert(it != m_predefinedFieldOffsets->end(), "Predefined struct layout missing a member.");
+				byIndex[index] = it->second;
+				slots = std::max<u256>(slots, it->second.first + member.type->storageSize());
+			}
+			storageOffsets.setOffsets(std::move(byIndex), slots);
+			return storageOffsets;
+		}
+
 		TypePointers memberTypes;
 		memberTypes.reserve(m_memberTypes.size());
 		for (auto const& member: m_memberTypes)
 			memberTypes.push_back(member.type);
 
-		StorageOffsets storageOffsets;
 		storageOffsets.computeOffsets(memberTypes);
 
 		return storageOffsets;
@@ -308,6 +333,10 @@ MemberList const& Type::members(ASTNode const* _currentScope) const
 		if (_currentScope)
 			members += attachedFunctions(*this, *_currentScope);
 		m_members[_currentScope] = std::make_unique<MemberList>(std::move(members));
+		// The storage layout uses the null-scope member list (fields only, no
+		// attached functions). Let the type pin a predefined field layout onto it.
+		if (!_currentScope)
+			applyPredefinedStorageLayout(*m_members[_currentScope]);
 	}
 	return *m_members[_currentScope];
 }
@@ -2421,6 +2450,40 @@ MemberList::MemberMap StructType::nativeMembers(ASTNode const*) const
 		);
 	}
 	return members;
+}
+
+void StructType::applyPredefinedStorageLayout(MemberList& _members) const
+{
+	// struct_layout.json schema: { "structs": { <StructName>: { <field>: {
+	//   "relative_slot": N, "offset": M } } } }. Apply only when this struct has a
+	// section that covers every field; otherwise leave the computed layout in place.
+	auto const& annotated = m_struct.annotation().predefinedStorageLayout;
+	if (!annotated.has_value())
+		return;
+	Json const& layout = annotated.value();
+	if (!layout.is_object() || !layout.contains("structs") || !layout["structs"].is_object())
+		return;
+	Json const& structs = layout["structs"];
+	auto specIt = structs.find(m_struct.name());
+	if (specIt == structs.end() || !specIt->is_object())
+		return;
+	Json const& spec = *specIt;
+
+	std::map<std::string, std::pair<u256, unsigned>> offsets;
+	for (MemberList::Member const& member: _members)
+	{
+		auto fieldIt = spec.find(member.name);
+		if (
+			fieldIt == spec.end() || !fieldIt->is_object() ||
+			!fieldIt->contains("relative_slot") || !fieldIt->contains("offset")
+		)
+			return;  // partial/missing coverage -> fall back to the computed layout
+		offsets[member.name] = {
+			u256(fieldIt->at("relative_slot").get<unsigned>()),
+			fieldIt->at("offset").get<unsigned>()
+		};
+	}
+	_members.setPredefinedStorageOffsets(std::move(offsets));
 }
 
 TypeResult StructType::interfaceType(bool _inLibrary) const

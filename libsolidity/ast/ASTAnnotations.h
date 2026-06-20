@@ -150,6 +150,10 @@ struct StructDeclarationAnnotation: TypeDeclarationAnnotation
 	/// Whether the struct contains a mapping type, either directly or, indirectly inside another
 	/// struct or an array.
 	std::optional<bool> containsNestedMapping;
+	/// Predefined storage layout JSON ({"vars":..,"structs":..}), propagated by
+	/// CompilerStack from --predefined-storage-layout. Its "structs"[name] section,
+	/// when it fully covers this struct's fields, overrides the computed field layout.
+	std::optional<Json> predefinedStorageLayout;
 };
 
 struct ContractDefinitionAnnotation: TypeDeclarationAnnotation, StructurallyDocumentedAnnotation
