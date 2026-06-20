@@ -691,16 +691,24 @@ void OverrideChecker::overrideListError(
 	if (_secondary.size() > 1)
 		contractSingularPlural = "contracts ";
 
-	m_errorReporter.typeError(
-		_error,
-		_item.overrides() ? _item.overrides()->location() : _item.location(),
-		ssl,
+	SourceLocation const location =
+		_item.overrides() ? _item.overrides()->location() : _item.location();
+	std::string const message =
 		_message1 +
 		contractSingularPlural +
 		_message2 +
 		joinHumanReadable(names, ", ", " and ") +
-		"."
-	);
+		".";
+
+	// RELAXED (eth-pack-opt): the "needs to specify overridden contracts" check
+	// (4327) is downgraded from an error to a warning so contracts that omit the
+	// explicit override(A, B) list (e.g. older ERC721A code) still compile under
+	// this newer solc. The overridden set is already resolved by the compiler, so
+	// emitted bytecode is unchanged; only the syntactic requirement is relaxed.
+	if (_error == 4327_error)
+		m_errorReporter.warning(_error, location, message, ssl);
+	else
+		m_errorReporter.typeError(_error, location, ssl, message);
 }
 
 void OverrideChecker::overrideError(

@@ -2176,22 +2176,43 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 		types.push_back(variable->annotation().type);
 	StorageOffsets offsets;
 	std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> variablesAndOffsets;
-	// if predefined-storage-layout is enabled, use the layout from the json file
-	// TODO: Now assume only one contract in the file...
+	// If predefined-storage-layout is enabled, use the layout from the json file.
+	// The annotation is attached to *every* contract in the compilation, but the
+	// layout only describes the target contract. Apply it only to contracts it
+	// fully covers (every variable present with slot/offset); base/sibling
+	// contracts whose variables are absent fall back to the normal computed
+	// layout. This avoids a json type_error.305 on missing keys and keeps the
+	// target contract's optimized layout intact (only its runtime is extracted).
 	if (m_contract.annotation().predefinedStorageLayout.has_value())
 	{
 		Json const& layoutJson = m_contract.annotation().predefinedStorageLayout.value();
-		Json const& varsJson = layoutJson["vars"];
-		for (size_t index = 0; index < variables.size(); ++index)
+		bool covers = layoutJson.is_object() && layoutJson.contains("vars") && layoutJson["vars"].is_object();
+		if (covers)
 		{
-			std::string var_name = variables[index]->name();
-			// Convert JSON values to the correct types
-			u256 slot = u256(varsJson[var_name]["slot"].get<unsigned>());
-			unsigned offset = varsJson[var_name]["offset"].get<unsigned>();
-			variablesAndOffsets.emplace_back(variables[index], slot, offset);
+			Json const& varsJson = layoutJson["vars"];
+			for (auto const* variable: variables)
+			{
+				auto it = varsJson.find(variable->name());
+				if (it == varsJson.end() || !it->is_object() || !it->contains("slot") || !it->contains("offset"))
+				{
+					covers = false;
+					break;
+				}
+			}
+			if (covers)
+			{
+				for (auto const* variable: variables)
+				{
+					Json const& v = varsJson[variable->name()];
+					u256 slot = u256(v["slot"].get<unsigned>());
+					unsigned offset = v["offset"].get<unsigned>();
+					variablesAndOffsets.emplace_back(variable, slot, offset);
+				}
+				return variablesAndOffsets;
+			}
 		}
-		return variablesAndOffsets;
-	} 
+		// Not covered by the predefined layout: fall through to computeOffsets.
+	}
 	
 	offsets.computeOffsets(types, layoutBaseForInheritanceHierarchy(m_contract, _location));
 
