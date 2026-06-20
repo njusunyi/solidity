@@ -2463,8 +2463,12 @@ void StructType::applyPredefinedStorageLayout(MemberList& _members) const
 	Json const& layout = annotated.value();
 	if (!layout.is_object() || !layout.contains("structs") || !layout["structs"].is_object())
 		return;
+	// The optimizer keys structs by the contract-qualified name (e.g. "C.Data");
+	// match that first, then fall back to the bare struct name.
 	Json const& structs = layout["structs"];
-	auto specIt = structs.find(m_struct.name());
+	auto specIt = structs.find(canonicalName());
+	if (specIt == structs.end())
+		specIt = structs.find(m_struct.name());
 	if (specIt == structs.end() || !specIt->is_object())
 		return;
 	Json const& spec = *specIt;
