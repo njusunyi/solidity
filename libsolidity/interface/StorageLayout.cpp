@@ -54,6 +54,13 @@ Json StorageLayout::generate(VariableDeclaration const& _var, u256 const& _slot,
 	varEntry["label"] = _var.name();
 	varEntry["astId"] = static_cast<int>(_var.id());
 	varEntry["contract"] = m_contract->fullyQualifiedName();
+	// The DECLARING contract (where the variable is defined) rather than the
+	// compiled contract in "contract". Lets consumers form a unique key
+	// (declaringContract.name) for variables whose bare name collides -- e.g. a
+	// `private` base member re-declared in a derived contract. Matches the
+	// qualified-name key used by --predefined-storage-layout in Types.cpp.
+	if (auto const* scopeContract = dynamic_cast<ContractDefinition const*>(_var.scope()))
+		varEntry["declaringContract"] = *scopeContract->annotation().canonicalName;
 	varEntry["slot"] = _slot.str();
 	varEntry["offset"] = _offset;
 	varEntry["type"] = typeKeyName(varType);

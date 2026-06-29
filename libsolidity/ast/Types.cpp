@@ -2219,9 +2219,25 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 		if (covers)
 		{
 			Json const& varsJson = layoutJson["vars"];
+			// The optimizer keys each variable by its DECLARING-contract-qualified
+			// name (e.g. "PaymentSplitter._shares") so that two state variables that
+			// share a bare name -- legal when a base declares it `private` and a
+			// derived contract re-declares it (OZ PaymentSplitter._shares vs. the
+			// contract's own _shares) -- do not collide into a single JSON key.
+			// Match the qualified name first, then fall back to the bare name so
+			// layouts emitted before this change (one variable per name) still apply.
+			auto findVar = [&](VariableDeclaration const* variable) -> Json::const_iterator {
+				if (auto const* scopeContract = dynamic_cast<ContractDefinition const*>(variable->scope()))
+				{
+					auto it = varsJson.find(*scopeContract->annotation().canonicalName + "." + variable->name());
+					if (it != varsJson.end())
+						return it;
+				}
+				return varsJson.find(variable->name());
+			};
 			for (auto const* variable: variables)
 			{
-				auto it = varsJson.find(variable->name());
+				auto it = findVar(variable);
 				if (it == varsJson.end() || !it->is_object() || !it->contains("slot") || !it->contains("offset"))
 				{
 					covers = false;
@@ -2232,7 +2248,7 @@ std::vector<std::tuple<VariableDeclaration const*, u256, unsigned>> ContractType
 			{
 				for (auto const* variable: variables)
 				{
-					Json const& v = varsJson[variable->name()];
+					Json const& v = *findVar(variable);
 					u256 slot = u256(v["slot"].get<unsigned>());
 					unsigned offset = v["offset"].get<unsigned>();
 					variablesAndOffsets.emplace_back(variable, slot, offset);
